@@ -13,7 +13,7 @@ const insideMonday = window.self !== window.top
 const seamless = insideMonday ? new SeamlessApiClient() : null
 
 export async function mondayRequest<T>(query: string, variables: Variables): Promise<T> {
-  if (seamless) return seamless.request<T>(query, variables)
+  if (seamless) return unwrapData<T>(await seamless.request<unknown>(query, variables))
 
   // The endpoint is dev-only. In a production build this branch is removed, so a plain
   // tab outside monday has no way to reach monday at all.
@@ -29,4 +29,14 @@ export async function mondayRequest<T>(query: string, variables: Variables): Pro
     throw new Error(body?.error ?? `monday dev endpoint answered ${res.status}`)
   }
   return body.data
+}
+
+// Inside monday the response comes back wrapped as { data: { ...fields } } (sometimes with extra
+// message fields like requestId). Peel the wrapper so both worlds return just { create_group: ... }.
+function unwrapData<T>(response: unknown): T {
+  let current = response
+  while (typeof current === 'object' && current !== null && 'data' in current && typeof current.data === 'object') {
+    current = current.data
+  }
+  return current as T
 }
