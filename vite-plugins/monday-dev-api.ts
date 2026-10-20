@@ -1,7 +1,9 @@
+import { existsSync, readFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { join } from 'node:path'
+import { parseEnv } from 'node:util'
 import { ApiClient } from '@mondaydotcomorg/api'
 import type { Plugin } from 'vite'
-import { loadEnv } from 'vite'
 import { ALLOWED_OPERATIONS, DEV_ENDPOINT } from '../src/monday/queries.ts'
 
 // Dev-only endpoint that lets the game talk to monday from a plain browser tab.
@@ -100,13 +102,24 @@ function readJson(req: IncomingMessage): Promise<unknown> {
   })
 }
 
+// Read the token from the .env files only. Vite's loadEnv lets a variable exported in the shell
+// (for example in ~/.zshrc) win over .env, which silently uses the wrong token.
+function readTokenFromEnvFiles(dir: string) {
+  let token: string | undefined
+  for (const name of ['.env', '.env.local']) {
+    const file = join(dir, name)
+    if (existsSync(file)) token = parseEnv(readFileSync(file, 'utf8')).MONDAY_API_TOKEN?.trim() || token
+  }
+  return token
+}
+
 export function mondayDevApi(): Plugin {
   return {
     name: 'monday-dev-api',
     apply: 'serve',
     configureServer(server) {
       // Read the token here, in Node. It is never copied anywhere else.
-      const token = loadEnv(server.config.mode, server.config.envDir || process.cwd(), '').MONDAY_API_TOKEN?.trim()
+      const token = readTokenFromEnvFiles(server.config.envDir || process.cwd())
       const client = token ? new ApiClient({ token }) : null
 
       server.middlewares.use(DEV_ENDPOINT, async (req, res) => {
