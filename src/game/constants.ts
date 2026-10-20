@@ -14,9 +14,9 @@ export const PLAYER_MAX_X = WIDTH - 8 - PLAYER_W
 export const START_LIVES = 3
 export const EXTRA_LIFE_SCORE = 1500
 
-export const PLAYER_BULLET_SPEED = 340
-export const MAX_PLAYER_BULLETS = 4
-export const PLAYER_FIRE_COOLDOWN = 0.12
+export const PLAYER_BULLET_SPEED = 1400
+export const MAX_PLAYER_BULLETS = 120
+export const PLAYER_FIRE_COOLDOWN = 0.1
 export const PLAYER_BULLET_H = 4
 export const ALIEN_BULLET_SPEED = 90
 export const ALIEN_BULLET_W = 3
@@ -51,5 +51,5 @@ export const UFO_SPEED = 45
 export const UFO_POINTS = [100, 50, 50, 100, 150, 100, 100, 50, 300, 100, 100, 100, 50, 150, 100] as const
 
 export const DEATH_DURATION = 2
-export const WAVE_CLEAR_DURATION = 2
+export const WAVE_CLEAR_DURATION = 0.3
 export const MAX_DT = 0.05
