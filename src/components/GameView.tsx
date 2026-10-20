@@ -191,9 +191,9 @@ export function GameView({ state }: { state: GameState }) {
             <Sprite d={SPRITES.playerExplosion[explosionFrame]} x={state.playerX} y={C.PLAYER_Y} fill={GREEN} />
           )}
 
-          {state.playerBullet && (
-            <rect x={state.playerBullet.x} y={state.playerBullet.y} width={1} height={C.PLAYER_BULLET_H} fill={WHITE} />
-          )}
+          {state.playerBullets.map((b, i) => (
+            <rect key={i} x={b.x} y={b.y} width={1} height={C.PLAYER_BULLET_H} fill={WHITE} />
+          ))}
           {state.alienBullets.map((b, i) => (
             <Sprite key={i} d={SPRITES.alienBullet[(Math.floor(b.y / 4) + i) % 2]} x={b.x - 1} y={b.y} fill={WHITE} />
           ))}

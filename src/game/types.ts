@@ -76,7 +76,8 @@ export interface GameState {
   extraLifeAwarded: boolean
   shotsFired: number
   playerX: number
-  playerBullet: Bullet | null
+  playerBullets: Bullet[]
+  fireCooldown: number
   alienBullets: Bullet[]
   alienFireTimer: number
   aliens: Alien[]

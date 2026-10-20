@@ -23,7 +23,8 @@ export function createGame(hiScore = 0): GameState {
     extraLifeAwarded: false,
     shotsFired: 0,
     playerX: 0,
-    playerBullet: null,
+    playerBullets: [],
+    fireCooldown: 0,
     alienBullets: [],
     alienFireTimer: 0,
     aliens: [],
@@ -85,7 +86,7 @@ function setupWave(state: GameState) {
   }
   state.shields = createShields()
   state.playerX = Math.round((C.WIDTH - C.PLAYER_W) / 2)
-  state.playerBullet = null
+  state.playerBullets = []
   state.alienBullets = []
   state.alienFireTimer = 1.5
   state.ufo = null
@@ -173,23 +174,36 @@ function clearShieldsUnder(state: GameState, r: Rect) {
 function killPlayer(state: GameState) {
   state.phase = 'dying'
   state.phaseTimer = C.DEATH_DURATION
-  state.playerBullet = null
+  state.playerBullets = []
   state.lives = Math.max(0, state.lives - 1)
 }
 
 function updatePlayer(state: GameState, input: Input, dt: number) {
   const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0)
   state.playerX = Math.min(C.PLAYER_MAX_X, Math.max(C.PLAYER_MIN_X, state.playerX + dir * C.PLAYER_SPEED * dt))
-  if ((input.fire || input.firePressed) && !state.playerBullet) {
-    state.playerBullet = { x: Math.round(state.playerX) + 6, y: C.PLAYER_Y - C.PLAYER_BULLET_H }
+  state.fireCooldown = Math.max(0, state.fireCooldown - dt)
+  if (
+    (input.fire || input.firePressed) &&
+    state.fireCooldown === 0 &&
+    state.playerBullets.length < C.MAX_PLAYER_BULLETS
+  ) {
+    state.playerBullets.push({ x: Math.round(state.playerX) + 6, y: C.PLAYER_Y - C.PLAYER_BULLET_H })
+    state.fireCooldown = C.PLAYER_FIRE_COOLDOWN
     state.shotsFired++
   }
 }
 
-function updatePlayerBullet(state: GameState, dt: number) {
+function updatePlayerBullets(state: GameState, dt: number) {
+  for (const bullet of [...state.playerBullets]) moveBullet(state, bullet, dt)
+}
+
+/** Moves one player bullet, and removes it from the state when it hits something. */
+function moveBullet(state: GameState, bullet: Bullet, dt: number) {
+  const remove = () => {
+    state.playerBullets = state.playerBullets.filter((b) => b !== bullet)
+  }
   let remaining = C.PLAYER_BULLET_SPEED * dt
-  while (remaining > 0 && state.playerBullet) {
-    const bullet = state.playerBullet
+  while (remaining > 0) {
     const step = Math.min(SUBSTEP, remaining)
     remaining -= step
     bullet.y -= step
@@ -197,7 +211,7 @@ function updatePlayerBullet(state: GameState, dt: number) {
 
     if (bullet.y <= C.HUD_BOTTOM) {
       explodeShot(state, bullet.x, C.HUD_BOTTOM + 2)
-      state.playerBullet = null
+      remove()
       return
     }
 
@@ -209,7 +223,7 @@ function updatePlayerBullet(state: GameState, dt: number) {
         state.events.push({ type: 'alienKilled', alienType: alien.type })
         addScore(state, C.ALIEN_POINTS[alien.type])
         state.explosions.push({ x: ar.x + ar.w / 2 - 6.5, y: ar.y, kind: 'alien', ttl: 0.25 })
-        state.playerBullet = null
+        remove()
         return
       }
     }
@@ -219,13 +233,13 @@ function updatePlayerBullet(state: GameState, dt: number) {
       state.explosions.push({ x: state.ufo.x, y: C.UFO_Y, kind: 'ufo', ttl: 1.2, label: String(state.ufo.points) })
       state.ufo = null
       state.ufoTimer = rand(20, 30)
-      state.playerBullet = null
+      remove()
       return
     }
 
     if (hitShields(state, r)) {
       explodeShot(state, bullet.x, bullet.y)
-      state.playerBullet = null
+      remove()
       return
     }
 
@@ -233,7 +247,7 @@ function updatePlayerBullet(state: GameState, dt: number) {
     if (hitIndex >= 0) {
       explodeShot(state, bullet.x, bullet.y)
       state.alienBullets.splice(hitIndex, 1)
-      state.playerBullet = null
+      remove()
       return
     }
   }
@@ -386,13 +400,13 @@ export function update(state: GameState, input: Input, rawDt: number) {
   }
 
   updatePlayer(state, input, dt)
-  updatePlayerBullet(state, dt)
+  updatePlayerBullets(state, dt)
 
   const alive = state.aliens.filter((a) => a.alive)
   if (alive.length === 0) {
     state.phase = 'waveClear'
     state.phaseTimer = C.WAVE_CLEAR_DURATION
-    state.playerBullet = null
+    state.playerBullets = []
     state.alienBullets = []
     state.ufo = null
     return

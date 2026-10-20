@@ -22,7 +22,7 @@ npm run dev
 - `src/components/GameView.tsx` – pure render of the state as SVG at the original 224×256 resolution.
 - `src/App.tsx` – `requestAnimationFrame` loop + keyboard input; re-renders once per frame.
 
-Features: 5×11 formation that speeds up as it thins, bottom-row-only alien fire, erodible shields,
+Features: 6×12 formation that speeds up as it thins, bottom-row-only alien fire, erodible shields,
 mystery UFO, extra life at 1500, increasingly lower/faster waves, hi-score saved in `localStorage`.
 
 ## Scripts
