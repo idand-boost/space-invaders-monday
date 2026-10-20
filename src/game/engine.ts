@@ -12,6 +12,7 @@ const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && a.x + a.w > b.x && a.y
 
 export function createGame(hiScore = 0): GameState {
   const state: GameState = {
+    events: [],
     phase: 'title',
     phaseTimer: 0,
     time: 0,
@@ -38,6 +39,7 @@ export function createGame(hiScore = 0): GameState {
 
 export function startGame(state: GameState) {
   Object.assign(state, createGame(state.hiScore), { phase: 'playing' })
+  state.events.push({ type: 'gameStarted' })
 }
 
 export function togglePause(state: GameState) {
@@ -204,6 +206,7 @@ function updatePlayerBullet(state: GameState, dt: number) {
       const ar = alienRect(state, alien)
       if (overlaps(r, ar)) {
         alien.alive = false
+        state.events.push({ type: 'alienKilled', alienType: alien.type })
         addScore(state, C.ALIEN_POINTS[alien.type])
         state.explosions.push({ x: ar.x + ar.w / 2 - 6.5, y: ar.y, kind: 'alien', ttl: 0.25 })
         state.playerBullet = null

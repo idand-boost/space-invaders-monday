@@ -2,6 +2,7 @@ import { useEffect, useReducer, useState } from 'react'
 import { GameView } from './components/GameView'
 import { createGame, startGame, togglePause, update } from './game/engine'
 import type { Input } from './game/types'
+import { recordAlienKilled, startRound } from './monday'
 
 const HI_SCORE_KEY = 'space-invaders:hi-score'
 
@@ -72,6 +73,10 @@ export default function App() {
     let raf = requestAnimationFrame(function frame(now) {
       update(game, input, (now - last) / 1000)
       input.firePressed = false
+      for (const event of game.events.splice(0)) {
+        if (event.type === 'gameStarted') startRound()
+        else if (event.type === 'alienKilled') void recordAlienKilled()
+      }
       last = now
       if (game.hiScore > savedHiScore) {
         savedHiScore = game.hiScore

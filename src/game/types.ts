@@ -61,7 +61,11 @@ export interface Input {
   firePressed: boolean
 }
 
+/** Things that happened this frame, for code outside the engine (like monday) to react to. */
+export type GameEvent = { type: 'gameStarted' } | { type: 'alienKilled'; alienType: AlienType }
+
 export interface GameState {
+  events: GameEvent[]
   phase: Phase
   phaseTimer: number
   time: number
