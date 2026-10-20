@@ -187,12 +187,7 @@ function updatePlayer(state: GameState, input: Input, dt: number) {
     state.fireCooldown === 0 &&
     state.playerBullets.length < C.MAX_PLAYER_BULLETS
   ) {
-    // One piercing bullet per alien column: a single shot clears the whole formation's front.
-    const columns = new Set(state.aliens.filter((a) => a.alive).map((a) => a.col))
-    for (const col of columns) {
-      const x = state.formation.x + col * C.ALIEN_CELL_W + Math.floor(C.ALIEN_BOX_W / 2)
-      state.playerBullets.push({ x, y: C.PLAYER_Y - C.PLAYER_BULLET_H })
-    }
+    state.playerBullets.push({ x: Math.round(state.playerX) + 6, y: C.PLAYER_Y - C.PLAYER_BULLET_H })
     state.fireCooldown = C.PLAYER_FIRE_COOLDOWN
     state.shotsFired++
   }
@@ -228,7 +223,8 @@ function moveBullet(state: GameState, bullet: Bullet, dt: number) {
         state.events.push({ type: 'alienKilled', alienType: alien.type })
         addScore(state, C.ALIEN_POINTS[alien.type])
         state.explosions.push({ x: ar.x + ar.w / 2 - 6.5, y: ar.y, kind: 'alien', ttl: 0.25 })
-        // Bullets pierce: keep flying and take out the whole column.
+        remove()
+        return
       }
     }
 
@@ -241,7 +237,11 @@ function moveBullet(state: GameState, bullet: Bullet, dt: number) {
       return
     }
 
-    // Bullets fly straight through shields too, so the cannon never blocks itself.
+    if (hitShields(state, r)) {
+      explodeShot(state, bullet.x, bullet.y)
+      remove()
+      return
+    }
 
     const hitIndex = state.alienBullets.findIndex((ab) => overlaps(r, alienBulletRect(ab)))
     if (hitIndex >= 0) {
